@@ -10,32 +10,160 @@
       height: 100%;
       margin: 0;
       padding: 0;
+      font-family: sans-serif;
     }
-    #input {
+    #input_name {
       margin: 1em;
+      padding: 0.5em;
     }
     #result {
-      margin: 0 1em 1em 1em;
-      border: 1px dashed #ccc;
+      margin: 0 1em;
+      padding: 1em;
+      border-top: 1px dashed #ccc;
+    }
+    h1 {
+      margin: 0;
+      padding: 0;
+      font-weight: 300;
+    }
+    h2 {
+      margin: 0;
+      padding: 0;
+      font-weight: 300;
     }
   </style>
 </head>
 <body>
-  <input id="input" type="text" placeholder="enter name" />
+  <input id="input_name" type="search" placeholder="enter name"/>
   <div id="result">
-    here
   </div>
 </body>
 <script>
 
-  function load() {
-    fetch('/name-days.csv')
+    
+  (function() {
+    const collator = Intl.Collator("pl", { sensitivity: "base" })
+
+    const prevRow = []
+    const str2Char = []
+
+    window.Levenshtein = {
+      get: function(str1, str2) {
+        const str1Len = str1.length
+        const str2Len = str2.length
+        if (str1Len === 0) {
+          return str2Len
+        }
+        if (str2Len === 0) {
+          return str1Len
+        }
+        let curCol
+        let nextCol
+        let i
+        let j
+        let tmp
+        for (i = 0; i < str2Len; ++i) {
+          prevRow[i] = i
+          str2Char[i] = str2.charCodeAt(i)
+        }
+        prevRow[str2Len] = str2Len
+        let strCmp
+        for (i = 0; i < str1Len; ++i) {
+          nextCol = i + 1
+          for (j = 0; j < str2Len; ++j) {
+            curCol = nextCol
+            strCmp = 0 === collator.compare(str1.charAt(i), String.fromCharCode(str2Char[j]))
+            nextCol = prevRow[j] + (strCmp ? 0 : 1)
+            tmp = curCol + 1
+            if (nextCol > tmp) {
+              nextCol = tmp
+            }
+            tmp = prevRow[j + 1] + 1
+            if (nextCol > tmp) {
+              nextCol = tmp
+            }
+            prevRow[j] = curCol
+          }
+          prevRow[j] = nextCol
+        }
+        return nextCol
+      }
+    }
+  }())
+
+  async function load() {
+    return fetch('https://jancajthaml.github.io/polish-name-days/name-days.csv')
       .then(function(data) {
-        console.log('data', data)
+        return data.text()
+      })
+      .then(function(data) {
+        return data.split(/\r?\n/)
+      })
+      .then(function(data) {
+        data.shift()
         return data
+      })
+      .then(function(data) {
+        const result = {}
+        for (const line of data) {
+          const [name, date] = line.split(',')
+          if (name == "") {
+            continue
+          }
+          if (!result[name]) {
+            result[name] = []
+          }
+          result[name].push(date)
+        }
+        return result
       })
   }
 
-  load();
+  function createH1(value) {
+    const node = document.createElement('h1')
+    node.innerHTML = value
+    return node
+  }
+
+  function createH2(value) {
+    const node = document.createElement('h2')
+    node.innerHTML = value
+    return node
+  }
+
+  function createHR(value) {
+    return document.createElement('hr')
+  }
+
+  (function() {
+    load().then(function(data) {
+      const keys = Object.keys(data)
+
+      const reconsolidate = function(event) {
+        document.getElementById("result").innerHTML = ""
+
+        const scores = keys.map(function(value) {
+          return [value, window.Levenshtein.get(value, event.target.value, { useCollator: true})]
+        }).sort(function compareNumbers(a, b) {
+          return a[1] - b[1]
+        })
+
+        for (let i = 0; i < 3; i++) {
+          if (scores[i] && scores[i][1] < 5) {
+            const key = scores[i][0]
+            document.getElementById("result").appendChild(createH1(key))
+            for (const date of data[key]) {
+              document.getElementById("result").appendChild(createH2(date))
+            }
+            document.getElementById("result").appendChild(createHR())
+          }
+        }
+
+      }
+
+      document.getElementById("input_name").addEventListener("keyup", reconsolidate)
+    })
+  }())
+
 </script>
 </html>
