@@ -6,7 +6,11 @@ This design covers the architectural transformation of the Polish Name Days appl
 
 ## Key decisions
 
-*To be populated as ADRs are written during Phase 04.*
+- **Firebase Realtime Database** as the single new infrastructure component — absorbs data storage, realtime push delivery, and data management into one managed service on the free tier ([ADR-01-01](../GENESIS_SUPPORT/adr/01-data/adr-01-01-realtime-data-service.md))
+- **JSON name-to-dates map** schema in Firebase RTDB with server-side validation rules ([ADR-01-02](../GENESIS_SUPPORT/adr/01-data/adr-01-02-data-schema.md))
+- **Vanilla JavaScript preserved** — no framework, no build system; Firebase compat SDK loaded via CDN `<script>` tag; static JSON fallback for resilience ([ADR-02-01](../GENESIS_SUPPORT/adr/02-frontend/adr-02-01-client-architecture.md))
+- **Levenshtein search algorithm unchanged** — dynamic key index re-extracted on data changes; dual-trigger rendering for immediate visibility of new names ([ADR-02-02](../GENESIS_SUPPORT/adr/02-frontend/adr-02-02-search-preservation.md))
+- **Hybrid hosting** — GitHub Pages for static assets (unchanged), Firebase RTDB for realtime data; independent availability ([ADR-03-01](../GENESIS_SUPPORT/adr/03-infrastructure/adr-03-01-hosting-strategy.md))
 
 ## How to read this doc set
 
