@@ -21,14 +21,14 @@ The current application is vanilla JavaScript (ES6+) with no framework. The arch
 
 | # | Source pattern | Target equivalent | Semantic gap | Mitigation | ADR |
 |---|---------------|------------------|-------------|------------|-----|
-| 1 | IIFE scope encapsulation | ES modules or framework component scope | None if ES modules; minor if bundled | Use native ES modules or framework equivalent | TBD |
-| 2 | Global object attachment (`window.Levenshtein`) | Module export / component-local import | None — direct equivalent | Standard refactor | TBD |
-| 3 | Closure-based immutable state | Mutable reactive state (framework state, observable, or mutable variable) | Semantic shift: state is no longer immutable after initial load; must handle additions at runtime | State management must support mutation + re-render trigger when new data arrives | TBD |
-| 4 | One-time fetch + promise chain | Persistent subscription (WebSocket, SSE, polling, or realtime database listener) | Fundamental shift: one-shot load → persistent connection with incremental updates | Must design initial load + ongoing update as unified data flow | TBD |
-| 5 | Static key extraction (`Object.keys`) | Dynamic key set that updates on data change | Gap: current code assumes key list is fixed; search must operate on growing dataset | Re-extract keys on data mutation, or maintain a live index | TBD |
-| 7 | `Intl.Collator` Polish locale | Same — `Intl.Collator` is a browser standard | None — direct preservation | No change needed | TBD |
-| 8 | Custom Levenshtein with shared arrays | Same algorithm, but must handle growing dataset | Performance gap: linear scan of all keys on every keystroke; grows with dataset size | May need index or debounce if dataset grows significantly | TBD |
-| 10 | Keyup event listener | Same or debounced equivalent | None or minor — may want debouncing for performance | Standard approach | TBD |
+| 1 | IIFE scope encapsulation | Retained — vanilla JS, no modules | None — zero-build preserved | No change; scope remains in script | [ADR-02-01](adr/02-frontend/adr-02-01-client-architecture.md) |
+| 2 | Global object attachment (`window.Levenshtein`) | Retained — no module system | None — direct preservation | No change | [ADR-02-01](adr/02-frontend/adr-02-01-client-architecture.md) |
+| 3 | Closure-based immutable state | Module-level mutable variables | Semantic shift: state is no longer immutable; must handle additions at runtime | Mutable `data` and `keys`; `onValue` callback updates both | [ADR-02-01](adr/02-frontend/adr-02-01-client-architecture.md) |
+| 4 | One-time fetch + promise chain | Firebase `onValue` listener | Fundamental shift: one-shot load → persistent connection with incremental updates | Single `onValue` on `/nameDays`; initial snapshot + updates from same channel | [ADR-01-01](adr/01-data/adr-01-01-realtime-data-service.md), [ADR-02-01](adr/02-frontend/adr-02-01-client-architecture.md) |
+| 5 | Static key extraction (`Object.keys`) | Dynamic key set re-extracted on `onValue` | Gap: key list must update when new names arrive | Re-extract `keys = Object.keys(data)` in listener callback | [ADR-02-02](adr/02-frontend/adr-02-02-search-preservation.md) |
+| 7 | `Intl.Collator` Polish locale | Same — `Intl.Collator` is a browser standard | None — direct preservation | No change needed | [ADR-02-02](adr/02-frontend/adr-02-02-search-preservation.md) |
+| 8 | Custom Levenshtein with shared arrays | Same algorithm, unchanged | Performance gap: linear scan; acceptable at current scale | No change; debounce if dataset grows (ADR-02-02) | [ADR-02-02](adr/02-frontend/adr-02-02-search-preservation.md) |
+| 10 | Keyup event listener | Same — keyup triggers reconsolidate | None — direct preservation | No change | [ADR-02-02](adr/02-frontend/adr-02-02-search-preservation.md) |
 
 ## Unmappable patterns
 
